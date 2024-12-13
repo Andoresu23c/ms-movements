@@ -20,9 +20,10 @@ public class Movimiento implements Serializable {
     private String tipoMovimiento;
     private double valor;
     private double saldo;
+    private boolean estado;
 
     @ManyToOne(cascade = CascadeType.REFRESH)
     @JoinColumn(name = "fkCuenta", nullable = false)
-    private Cliente cliente;
+    private Cuenta cuenta;
 
 }

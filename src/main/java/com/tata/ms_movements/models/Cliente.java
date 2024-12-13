@@ -3,18 +3,20 @@ package com.tata.ms_movements.models;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.Data;
-
-import java.io.Serial;
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
 @Data
 @Entity
-public class Cliente extends Persona {
-    @Column(unique = true, nullable = false)
-    private String idCliente;
+public class Cliente extends Persona { //Hereda todos los atributos de Persona a cliente
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long idCliente;
     @Column(nullable = false)
     private String contrasenia;
-    private String estado;
+    private boolean estado;
+
+    @OneToMany(fetch = FetchType.LAZY,mappedBy = "fkCliente")
+    @JsonManagedReference
+    private List<Cuenta> cuentas = new ArrayList<>();
 }

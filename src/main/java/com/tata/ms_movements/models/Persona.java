@@ -8,7 +8,7 @@ import java.io.Serializable;
 
 @Data
 @Entity
-@Inheritance(strategy = InheritanceType.JOINED) //Permite la herencia entre las entidades
+@Inheritance(strategy = InheritanceType.JOINED) //Permite la herencia entre las entidades con JPA
 public class Persona implements Serializable {
     //Permite serializar la persistencia de datos de los objetos
     @Serial
@@ -19,7 +19,6 @@ public class Persona implements Serializable {
     private Long idPersona;
     private String nombre;
     private String genero;
-
     //No permite ingresar la misma identificación
     @Column(unique = true, nullable = false)
     private String identificacion;
@@ -27,5 +26,5 @@ public class Persona implements Serializable {
     private String direccion;
     @Column(unique = true)
     private String telefono;
-
+    private boolean estado;
 }
