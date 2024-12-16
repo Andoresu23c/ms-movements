@@ -80,3 +80,6 @@ Luego de cumplir con el paso anterior el proyecto estará listo para poder ser d
 
 ## Prueba de las apis en postman
 1. Se tiene el archivo de postman en formato JSON para poder hacer prueba de todas las apis del proyecto
+
+##Base de datos
+El archivo .sql con la base de datos y su diagramación, datos de prueba e inserciones se detalla como ```BasedeDatos.sql```
