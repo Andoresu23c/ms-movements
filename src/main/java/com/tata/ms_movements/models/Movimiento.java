@@ -7,6 +7,8 @@ import java.io.Serial;
 import java.io.Serializable;
 import java.time.LocalDate;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+
 @Data
 @Entity
 public class Movimiento implements Serializable {
@@ -24,6 +26,6 @@ public class Movimiento implements Serializable {
 
     @ManyToOne(cascade = CascadeType.REFRESH)
     @JoinColumn(name = "fkCuenta", nullable = false)
-    private Cuenta cuenta;
-
+    @JsonBackReference
+    private Cuenta fkCuenta;
 }

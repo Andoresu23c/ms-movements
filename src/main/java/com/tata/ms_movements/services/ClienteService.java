@@ -1,15 +1,15 @@
 package com.tata.ms_movements.services;
 
+import com.tata.ms_movements.dtos.ClienteDTO;
 import com.tata.ms_movements.dtos.Response;
 import com.tata.ms_movements.models.Cliente;
-import com.tata.ms_movements.models.Cuenta;
 
 import java.util.List;
 
-public interface clienteService {
-    public Response<List<Cliente>> findAllCliente();
-    public Response<Cliente> findClienteById(Long id);
+public interface ClienteService {
+    public Response<List<ClienteDTO>> findAllCliente();
+    public Response<ClienteDTO> findClienteById(String idCliente);
     public Response<Cliente> createCliente(Cliente cliente);
     public Response<Cliente> updateCliente(Cliente cliente);
-    public Response<Cliente> deleteCliente(Long id);
+    public Response<Boolean> deleteCliente(String id);
 }

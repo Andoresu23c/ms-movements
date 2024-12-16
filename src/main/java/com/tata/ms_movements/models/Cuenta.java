@@ -31,7 +31,8 @@ public class Cuenta implements Serializable {
     //Define la relación de las entidades de N:1, varias cuentas pueden ser creadas por un solo cliente
     @ManyToOne(cascade = CascadeType.REFRESH)
     @JoinColumn(name = "fkCliente", nullable = false)
-    private Cliente cliente;
+    @JsonBackReference
+    private Cliente fkCliente;
 
     @OneToMany(fetch = FetchType.LAZY,mappedBy = "fkCuenta")
     @JsonManagedReference

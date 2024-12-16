@@ -1,71 +1,149 @@
 package com.tata.ms_movements.services.impl;
 
+import com.tata.ms_movements.dtos.CuentaDTO;
 import com.tata.ms_movements.dtos.Response;
+import com.tata.ms_movements.mappers.CuentaMapper;
+import com.tata.ms_movements.models.Cliente;
 import com.tata.ms_movements.models.Cuenta;
-import com.tata.ms_movements.repositories.cuentaRepository;
-import com.tata.ms_movements.services.cuentaService;
+import com.tata.ms_movements.repositories.ClienteRepository;
+import com.tata.ms_movements.repositories.CuentaRepository;
+import com.tata.ms_movements.services.CuentaService;
+
+import jakarta.transaction.Transactional;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
-public class cuentaServiceImpl implements cuentaService {
+public class cuentaServiceImpl implements CuentaService {
 
     @Autowired
-    private cuentaRepository repo;
+    private CuentaRepository repo;
+    @Autowired
+    private ClienteRepository  clienteRepository;
     LocalDateTime fecha = LocalDateTime.now();
 
+    @Transactional
     @Override
-    public Response<List<Cuenta>> findAllCuentas() {
+    public Response<List<CuentaDTO>> findAllCuentas() {
         try {
-            List<Cuenta> cuentas = repo.findByEstadoTrue();
-            return new Response<>(UUID.randomUUID().toString(), "List", cuentas, "Cuentas listadas correctamente.");
+            //Convierte la lista de entidades a DTOs
+            List<CuentaDTO> cuentaDTOs = repo.findByEstadoTrue().stream()
+                .map(CuentaMapper::toDto)
+                .collect(Collectors.toList());
+            return new Response<>(UUID.randomUUID().toString(), "List", cuentaDTOs, "Cuentas listadas correctamente.");
         }catch (Exception e) {
             return new Response<>(UUID.randomUUID().toString(), "Error", null, "Ocurrió un error al listar las cuentas: " + e.getMessage());
         }
     }
 
+    @Transactional
     @Override
-    public Response<Cuenta> findCuentaById(Long id) {
+    public Response<CuentaDTO> findCuentaById(Long id) {
         try {
-            Cuenta cuenta = repo.findById(id).orElse(null);
-            return new Response<>(UUID.randomUUID().toString(), "List", cuenta, "Cuentas listadas correctamente.");
-        }catch (Exception e) {
-            return new Response<>(UUID.randomUUID().toString(), "Error", null, "Ocurrió un error al listar las cuentas: " + e.getMessage());
-        }
-    }
-
-    @Override
-    public Response<Boolean> createCuenta(Cuenta cuenta) {
-        try {
-            repo.save(cuenta);
-            return new Response<>(UUID.randomUUID().toString(), "List", true , "Cuenta creada correctamente.");
-        } catch (Exception e) {
-            return new Response<>(UUID.randomUUID().toString(), "Error", null, "Ocurrió un error al crear la cuenta: " + e.getMessage());
-        }
-    }
-
-    @Override
-    public Response<Cuenta> updateCuenta(Cuenta cuenta) {
-        try {
-            Cuenta cuentasExistentes = repo.findById(cuenta.getIdCuenta()).orElse(null);
-            if (cuentasExistentes != null) {
-                cuentasExistentes.setNumeroCuenta(cuenta.getNumeroCuenta());
-                cuentasExistentes.setTipoCuenta(cuenta.getTipoCuenta());
-                cuentasExistentes.setSaldoInicial(cuenta.getSaldoInicial());
-                cuentasExistentes.setEstado(cuenta.isEstado());
-                repo.save(cuentasExistentes);
+            
+            Optional<Cuenta> cuenta = repo.findByIdCuenta(id);
+            if (cuenta.isEmpty()) {
+                return new Response<>(UUID.randomUUID().toString(), "Error", null, "Cliente no encontrado con ID: " + id);
             }
-            return new Response<>(UUID.randomUUID().toString(), "List", cuentasExistentes , "Cuenta editada correctamente el " + fecha.toString());
+
+            //Mapear la entidad
+            CuentaDTO cuentadto = CuentaMapper.toDto(cuenta.get());
+
+            //Retornar respuesta con el DTO
+            return new Response<>(UUID.randomUUID().toString(), "Object", cuentadto, "Cliente encontrado correctamente.");
+        } catch (Exception e) {
+            //Manejar excepciones y retornar un mensaje de error
+            return new Response<>(UUID.randomUUID().toString(), "Error", null, "Error al buscar el cliente: " + e.getMessage());
         }
-        catch (Exception e) {
-            return new Response<>(UUID.randomUUID().toString(), "Error", null, "Ocurrió un error al editar la cuenta: " + e.getMessage());
+    }
+    
+    @Override
+    public Response<CuentaDTO> createCuenta(CuentaDTO cuentaDTO) {
+        try {
+            Cliente cliente = clienteRepository.findByIdCliente(cuentaDTO.getFkCliente())
+                .orElseThrow(() -> new RuntimeException("Cliente no encontrado con ID: " + cuentaDTO.getFkCliente()));
+
+            Cuenta cuenta = CuentaMapper.toEntity(cuentaDTO, cliente);
+            Cuenta savedCuenta = repo.save(cuenta);
+            CuentaDTO savedCuentaDTO = CuentaMapper.toDto(savedCuenta);
+
+            return new Response<>(
+                UUID.randomUUID().toString(),
+                "Create",
+                savedCuentaDTO,
+                "Cuenta creada correctamente."
+            );
+        } catch (Exception e) {
+            return new Response<>(
+                UUID.randomUUID().toString(),
+                "Error",
+                null,
+                "Ocurrió un error al crear la cuenta: " + e.getMessage()
+            );
         }
     }
 
+ 
+    @Override
+    public Response<CuentaDTO> updateCuenta(CuentaDTO cuentaDTO) {
+        try {
+            // Validar que el ID no sea nulo
+            if (cuentaDTO.getIdCuenta() == null) {
+                throw new IllegalArgumentException("El ID de la cuenta no puede ser nulo.");
+            }
+
+            // Buscar la cuenta por ID
+            Cuenta cuenta = repo.findById(cuentaDTO.getIdCuenta())
+                .orElseThrow(() -> new RuntimeException("Cuenta no encontrada con ID: " + cuentaDTO.getIdCuenta()));
+
+            // Buscar y validar el cliente
+            Cliente cliente = clienteRepository.findByIdCliente(cuentaDTO.getFkCliente())
+                .orElseThrow(() -> new RuntimeException("Cliente no encontrado con ID: " + cuentaDTO.getFkCliente()));
+
+            // Actualizar la cuenta
+            cuenta.setNumeroCuenta(cuentaDTO.getNumeroCuenta());
+            cuenta.setTipoCuenta(cuentaDTO.getTipoCuenta());
+            cuenta.setSaldoInicial(cuentaDTO.getSaldoInicial());
+            cuenta.setEstado(cuentaDTO.isEstado());
+            cuenta.setFkCliente(cliente);
+
+            // Guardar la cuenta actualizada
+            Cuenta updatedCuenta = repo.save(cuenta);
+
+            // Convertir a DTO y retornar respuesta
+            CuentaDTO updatedCuentaDTO = CuentaMapper.toDto(updatedCuenta);
+
+            return new Response<>(
+                UUID.randomUUID().toString(),
+                "Update",
+                updatedCuentaDTO,
+                "Cuenta actualizada correctamente."
+            );
+        } catch (IllegalArgumentException e) {
+            return new Response<>(
+                UUID.randomUUID().toString(),
+                "Error",
+                null,
+                e.getMessage()
+            );
+        } catch (Exception e) {
+            return new Response<>(
+                UUID.randomUUID().toString(),
+                "Error",
+                null,
+                "Ocurrió un error al actualizar la cuenta: " + e.getMessage()
+            );
+        }
+    }
+
+    
     @Override
     public Response<Boolean> deleteCuenta(Long id) {
         Cuenta cuenta = repo.findById(id).orElse(null);
@@ -83,4 +161,5 @@ public class cuentaServiceImpl implements cuentaService {
             return new Response<>(UUID.randomUUID().toString(), "Error", false, "Ocurrió un error al eliminar la cuenta: ."+e.getMessage());
         }
     }
+
 }
